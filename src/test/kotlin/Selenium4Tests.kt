@@ -1,5 +1,4 @@
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.openqa.selenium.WebDriver
@@ -20,19 +19,10 @@ class Selenium4Tests {
         System.setProperty("webdriver.chrome.driver", "/opt/WebDriver/bin/chromedriver");
         val options = ChromeOptions()
         val prefs: MutableMap<String, Any> = HashMap()
-        val profile: MutableMap<String, Any> = HashMap()
-        val contentSettings: MutableMap<String, Any> = HashMap()
+        prefs["profile.default_content_settings.geolocation"] = 1
 
-        // SET CHROME OPTIONS
-        // 0 - Default, 1 - Allow, 2 - Block
-
-        // SET CHROME OPTIONS
-        // 0 - Default, 1 - Allow, 2 - Block
-        contentSettings["geolocation"] = 1
-        profile["managed_default_content_settings"] = contentSettings
-        prefs["profile"] = profile
         options.setExperimentalOption("prefs", prefs)
-        chrome = ChromeDriver()
+        chrome = ChromeDriver(options)
     }
 
     @AfterEach
@@ -42,8 +32,6 @@ class Selenium4Tests {
 
     @Test
     fun `start browser`() {
-        assertEquals(1, 1)
-
         chrome.navigate().to("http://google.com")
         chrome.switchTo().newWindow(WindowType.WINDOW).navigate().to("http://jetbrains.com")
         chrome.switchTo().newWindow(WindowType.TAB).navigate().to("http://yandex.ru")
@@ -57,7 +45,7 @@ class Selenium4Tests {
 
     @Test
     fun `change location`() {
-        chrome.navigate().to("https://oldnavy.gap.com/stores")
+        chrome.navigate().to("https://www.gps-coordinates.net/my-location")
         Thread.sleep(2000)
         chrome.setGeolocation(51.5055, 0.0754, 1.2)
         chrome.navigate().refresh()
