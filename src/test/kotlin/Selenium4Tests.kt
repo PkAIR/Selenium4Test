@@ -7,6 +7,7 @@ import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.devtools.HasDevTools
 import org.openqa.selenium.devtools.v94.emulation.Emulation
+import org.openqa.selenium.devtools.v94.network.Network
 import org.openqa.selenium.remote.Augmenter
 import java.util.*
 
@@ -27,6 +28,7 @@ class Selenium4Tests {
 
     @AfterEach
     fun close() {
+        chrome.getRemoteDevTools().close()
         chrome.quit()
     }
 
@@ -73,63 +75,82 @@ class Selenium4Tests {
         Thread.sleep(2000)
     }
 
+    @Test
+    fun `simulate slow network`() {
+        chrome.emulateNetwork(
+            offline = false,
+            latency = 20,
+            downloadThroughput = 5000,
+            uploadThroughput = 5000
+        )
+        chrome.get("https://www.google.com")
+    }
+
     fun WebDriver.getRemoteDevTools() = (Augmenter().augment(this) as HasDevTools).devTools
 
     fun WebDriver.setGeolocation(latitude: Double, longitude: Double, accuracy: Double) {
-        with(this.getRemoteDevTools()) {
-            createSessionIfThereIsNotOne()
-            send(
-                Emulation.setGeolocationOverride(
-                    Optional.of(latitude), // latitude
-                    Optional.of(longitude), // longitude
-                    Optional.of(accuracy) // accuracy
-                )
+        val devTools = this.getRemoteDevTools()
+        devTools.createSessionIfThereIsNotOne()
+        devTools.send(
+            Emulation.setGeolocationOverride(
+                Optional.of(latitude), // latitude
+                Optional.of(longitude), // longitude
+                Optional.of(accuracy) // accuracy
             )
-            close()
-        }
+        )
     }
 
     fun WebDriver.setTimezone(timezone: String) {
-        with(this.getRemoteDevTools()) {
-            createSessionIfThereIsNotOne()
-            send(Emulation.setTimezoneOverride(timezone))
-            close()
-        }
+        val devTools = this.getRemoteDevTools()
+        devTools.createSessionIfThereIsNotOne()
+        devTools.send(Emulation.setTimezoneOverride(timezone))
     }
 
     fun WebDriver.setMobileView(width: Int, height: Int, deviceScaleFactor: Int = 50, isPortrait: Boolean = true) {
-        with(this.getRemoteDevTools()) {
-            createSessionIfThereIsNotOne()
-            send(
-                Emulation.setDeviceMetricsOverride(
-                    width,
-                    height,
-                    deviceScaleFactor,
-                    true,      // isMobile
-                    Optional.empty(), // scale
-                    Optional.empty(), // screenWidth
-                    Optional.empty(), // screenHeight
-                    Optional.empty(), // positionX
-                    Optional.empty(), // positionY
-                    Optional.empty(), // dontSetVisibleSize
-                    Optional.of(
-                        if (isPortrait) {
-                            org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation(
-                                org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation.Type.PORTRAITPRIMARY,
-                                0
-                            )
-                        } else {
-                            org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation(
-                                org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation.Type.LANDSCAPEPRIMARY,
-                                0
-                            )
-                        }
-                    ), // screenOrientation
-                    Optional.empty(), // viewport
-                    Optional.empty() // displayFeature
-                )
+        val devTools = this.getRemoteDevTools()
+        devTools.createSessionIfThereIsNotOne()
+        devTools.send(
+            Emulation.setDeviceMetricsOverride(
+                width,
+                height,
+                deviceScaleFactor,
+                true,      // isMobile
+                Optional.empty(), // scale
+                Optional.empty(), // screenWidth
+                Optional.empty(), // screenHeight
+                Optional.empty(), // positionX
+                Optional.empty(), // positionY
+                Optional.empty(), // dontSetVisibleSize
+                Optional.of(
+                    if (isPortrait) {
+                        org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation(
+                            org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation.Type.PORTRAITPRIMARY,
+                            0
+                        )
+                    } else {
+                        org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation(
+                            org.openqa.selenium.devtools.v94.emulation.model.ScreenOrientation.Type.LANDSCAPEPRIMARY,
+                            0
+                        )
+                    }
+                ), // screenOrientation
+                Optional.empty(), // viewport
+                Optional.empty() // displayFeature
             )
-            close()
-        }
+        )
+    }
+
+    fun WebDriver.emulateNetwork(offline: Boolean, latency: Int, downloadThroughput: Int, uploadThroughput: Int) {
+        val devTools = this.getRemoteDevTools()
+        devTools.createSessionIfThereIsNotOne()
+        devTools.send(
+            Network.emulateNetworkConditions(
+                offline,
+                latency,
+                downloadThroughput,
+                uploadThroughput,
+                Optional.empty() // connectionType
+            )
+        )
     }
 }
